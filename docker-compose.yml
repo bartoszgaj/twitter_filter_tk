@@ -35,8 +35,6 @@ services:
    image: mysql/mysql-server:5.7
    environment:
     MYSQL_DATABASE: test
-    MYSQL_ROOT_PASSWORD: hellokoding
-    MYSQL_ROOT_HOST: '%'
    ports:
    - "3306:3306"
    restart: always
@@ -46,7 +44,7 @@ services:
     build: spring
     working_dir: /app
     volumes:
-      - ./app:/app
+      - ./spring:/app
       - ~/.m2:/root/.m2
     expose:
       - "8080"
@@ -55,6 +53,4 @@ services:
       - mysql
 
 networks:
-  # Declare our private network.  We must declare one for the magic
-  # Docker DNS to work, but otherwise its default settings are fine.
   network: {}
