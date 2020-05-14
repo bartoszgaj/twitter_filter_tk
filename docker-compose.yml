@@ -1,0 +1,60 @@
+version: '3'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+    - 5672:5672 # port for the daemon API
+    - 15672:15672 # port for the RabbitMQ management interface
+    networks:
+      - network
+    healthcheck:
+      timeout: 5s
+      interval: 5s
+      retries: 5
+      test:
+        - "CMD"
+        - "rabbitmqctl"
+        - "status"
+  consumer:
+    build: consumer
+    networks:
+      - network
+    depends_on:
+      - rabbitmq
+    restart: on-failure
+  producer:
+    build: producer
+    networks:
+      - network
+    depends_on:
+      - rabbitmq
+    restart: on-failure
+  mysql:
+   image: mysql/mysql-server:5.7
+   environment:
+    MYSQL_DATABASE: test
+    MYSQL_ROOT_PASSWORD: hellokoding
+    MYSQL_ROOT_HOST: '%'
+   ports:
+   - "3306:3306"
+   restart: always
+
+  app:
+    restart: always
+    build: spring
+    working_dir: /app
+    volumes:
+      - ./app:/app
+      - ~/.m2:/root/.m2
+    expose:
+      - "8080"
+    command: mvn clean spring-boot:run
+    depends_on:
+      - mysql
+
+networks:
+  # Declare our private network.  We must declare one for the magic
+  # Docker DNS to work, but otherwise its default settings are fine.
+  network: {}
