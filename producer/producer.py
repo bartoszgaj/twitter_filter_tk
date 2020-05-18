@@ -1,51 +1,48 @@
 import json
 import random
 import pika
+import tweepy
+
+TWITTER_APP_KEY = '???'
+TWITTER_APP_SECRET = '???'
+TWITTER_KEY = '??'
+TWITTER_SECRET = '???'
 
 print('pika version: %s' % pika.__version__)
+print('tweepy version: %s' % tweepy.__version__)
+
+filter_list = ["#koronawirus", "wybory2020"]
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='rabbitmq'))
 main_channel = connection.channel()
 
-main_channel.exchange_declare(exchange='com.micex.sten', exchange_type='direct')
-main_channel.exchange_declare(
-    exchange='com.micex.lasttrades', exchange_type='direct')
+main_channel.exchange_declare(exchange='twitter_exchange', exchange_type='direct')
 
-tickers = {
-    'MXSE.EQBR.LKOH': (1933, 1940),
-    'MXSE.EQBR.MSNG': (1.35, 1.45),
-    'MXSE.EQBR.SBER': (90, 92),
-    'MXSE.EQNE.GAZP': (156, 162),
-    'MXSE.EQNE.PLZL': (1025, 1040),
-    'MXSE.EQNL.VTBR': (0.05, 0.06)
-}
+print("Rabbit connect successful")
 
+auth = tweepy.OAuthHandler(TWITTER_APP_KEY, TWITTER_APP_SECRET)
+auth.set_access_token(TWITTER_KEY, TWITTER_SECRET)
+api = tweepy.API(auth)
 
-def getticker():
-    return list(tickers.keys())[random.randrange(0, len(tickers) - 1)]
+class StreamListener(tweepy.StreamListener):
+    def on_status(self, status):
+        print("Downloaded tweet: %s", status.text)
+        json_str = json.dumps(status._json)
+        main_channel.basic_publish(
+            exchange='twitter_exchange',
+            routing_key='tweet',
+            body=json_str,
+            properties=pika.BasicProperties(content_type='application/json'))
+        print("Sent tweet: %s" % status.text)
 
+    def on_error(self, status_code):
+        if status_code == 420:
+            print("Closing with error 420")
+            return False
 
-_COUNT_ = 1000
-
-for i in range(0, _COUNT_):
-    ticker = getticker()
-    msg = {
-        'order.stop.create': {
-            'data': {
-                'params': {
-                    'condition': {
-                        'ticker': ticker
-                    }
-                }
-            }
-        }
-    }
-    main_channel.basic_publish(
-        exchange='com.micex.sten',
-        routing_key='order.stop.create',
-        body=json.dumps(msg),
-        properties=pika.BasicProperties(content_type='application/json'))
-    print('send ticker %s' % ticker)
+stream_listener = StreamListener()
+stream = tweepy.Stream(auth=api.auth, listener=stream_listener)
+stream.filter(track=filter_list)
 
 connection.close()
