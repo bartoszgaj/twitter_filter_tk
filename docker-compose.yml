@@ -43,7 +43,6 @@ services:
    restart: always
    networks:
      - network
-
   app:
     restart: always
     build: spring
@@ -58,6 +57,12 @@ services:
       - mysql
     networks:
       - network
-
+  node:
+    build: node
+    networks:
+      - network
+    depends_on:
+      - app
+    restart: on-failure
 networks:
   network: {}
