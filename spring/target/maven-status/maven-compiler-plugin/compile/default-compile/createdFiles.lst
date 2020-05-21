@@ -1,6 +1,0 @@
-com/example/springboot/data/TweetRepository.class
-com/example/springboot/data/model/Tweet.class
-com/example/springboot/rest/TweetRESTController.class
-com/example/springboot/WebApplication.class
-com/example/springboot/IndexController.class
-com/example/springboot/rabbitmq/QueueConfig.class
