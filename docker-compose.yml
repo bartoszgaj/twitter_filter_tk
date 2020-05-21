@@ -34,10 +34,15 @@ services:
   mysql:
    image: mysql/mysql-server:5.7
    environment:
+    MYSQL_ROOT_PASSWORD: root
     MYSQL_DATABASE: test
+    MYSQL_USER: user
+    MYSQL_PASSWORD: password
    ports:
    - "3306:3306"
    restart: always
+   networks:
+     - network
 
   app:
     restart: always
@@ -51,6 +56,8 @@ services:
     command: mvn clean spring-boot:run
     depends_on:
       - mysql
+    networks:
+      - network
 
 networks:
   network: {}
