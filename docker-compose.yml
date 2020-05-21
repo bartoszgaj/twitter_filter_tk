@@ -17,13 +17,6 @@ services:
         - "CMD"
         - "rabbitmqctl"
         - "status"
-  consumer:
-    build: consumer
-    networks:
-      - network
-    depends_on:
-      - rabbitmq
-    restart: on-failure
   producer:
     build: producer
     networks:
